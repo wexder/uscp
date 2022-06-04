@@ -10,19 +10,19 @@ type Info struct {
 	Errors []error
 }
 
-func (info *Info) mergeValue(path []string, patch map[string]interface{}, key string, value interface{}) interface{} {
+func (info *Info) mergeValue(path []string, patch map[string]any, key string, value any) any {
 	patchValue, patchHasValue := patch[key]
 
 	if !patchHasValue {
 		return value
 	}
 
-	_, patchValueIsObject := patchValue.(map[string]interface{})
+	_, patchValueIsObject := patchValue.(map[string]any)
 
 	path = append(path, key)
 	pathStr := strings.Join(path, ".")
 
-	if _, ok := value.(map[string]interface{}); ok {
+	if _, ok := value.(map[string]any); ok {
 		if !patchValueIsObject {
 			err := fmt.Errorf("patch value must be object for key \"%v\"", pathStr)
 			info.Errors = append(info.Errors, err)
@@ -32,25 +32,25 @@ func (info *Info) mergeValue(path []string, patch map[string]interface{}, key st
 		return info.mergeObjects(value, patchValue, path)
 	}
 
-	if _, ok := value.([]interface{}); ok && patchValueIsObject {
+	if _, ok := value.([]any); ok && patchValueIsObject {
 		return info.mergeObjects(value, patchValue, path)
 	}
 
 	return patchValue
 }
 
-func (info *Info) mergeObjects(data, patch interface{}, path []string) interface{} {
-	if patchObject, ok := patch.(map[string]interface{}); ok {
-		if dataArray, ok := data.([]interface{}); ok {
-			ret := make([]interface{}, len(dataArray))
+func (info *Info) mergeObjects(data, patch any, path []string) any {
+	if patchObject, ok := patch.(map[string]any); ok {
+		if dataArray, ok := data.([]any); ok {
+			ret := make([]any, len(dataArray))
 
 			for i, val := range dataArray {
 				ret[i] = info.mergeValue(path, patchObject, strconv.Itoa(i), val)
 			}
 
 			return ret
-		} else if dataObject, ok := data.(map[string]interface{}); ok {
-			ret := make(map[string]interface{})
+		} else if dataObject, ok := data.(map[string]any); ok {
+			ret := make(map[string]any)
 
 			for k, v := range dataObject {
 				ret[k] = info.mergeValue(path, patchObject, k, v)
