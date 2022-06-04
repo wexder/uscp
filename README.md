@@ -33,6 +33,11 @@ func main() {
 }
 ```
 
+## Required
+You can mark struct fields with `uscp:"required"`.
+When unmarshallig the **USCP** will check if value of this field is non [zero value](https://go.dev/ref/spec#The_zero_value)
+if value is zero error is returned
+
 ## Merging
 One of important properties of **USCP** is configuration merging.
 When you load two configuration files with, we merge them together.
