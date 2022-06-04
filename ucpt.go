@@ -92,10 +92,6 @@ func (u *Uscp) ReadInConfiguration() error {
 }
 
 func (u *Uscp) Unmarshal(out interface{}) error {
-	// if len(u.FileContents) == 0 {
-	// 	return fmt.Errorf("No configuration loaded")
-	// }
-
 	configs := []map[string]any{}
 	for _, file := range u.FileContents {
 		rawConfig := map[string]any{}
@@ -108,19 +104,15 @@ func (u *Uscp) Unmarshal(out interface{}) error {
 	}
 
 	result := map[string]any{}
-	for _, conf := range configs {
-
-		merged, err := merge.Merge(conf, result)
-		if err != nil {
-			return err
+	if len(configs) > 0 {
+		result = configs[0]
+		for _, conf := range configs {
+			merged, err := merge.Merge(result, conf)
+			if err != nil {
+				return err
+			}
+			result = merged
 		}
-		result = merged
-
-		merged, err = merge.Merge(result, conf)
-		if err != nil {
-			return err
-		}
-		result = merged
 	}
 
 	jsonBytes, err := yaml.Marshal(result)
@@ -143,7 +135,7 @@ func bindEnvs(i interface{}, path string) error {
 		t = reflect.Indirect(t)
 	}
 
-	return iterateStruct(t, path)
+	return iterateStruct(t, []string{path})
 }
 
 var (
@@ -151,11 +143,11 @@ var (
 	durationType    = reflect.TypeOf((*time.Duration)(nil)).Elem()
 )
 
-func iterateStruct(t reflect.Value, path string) error {
+func iterateStruct(t reflect.Value, path []string) error {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Type().Field(i)
 		n := f.Name
-		value, present := os.LookupEnv(path + "_" + n)
+		value, present := os.LookupEnv(strings.Join(append(path, n), "_"))
 		switch f.Type.Kind() {
 		case reflect.Struct:
 			// We want to check if we can unmarshal the value directly with unmarshaller
@@ -171,7 +163,7 @@ func iterateStruct(t reflect.Value, path string) error {
 					}
 				}
 			} else {
-				iterateStruct(t.Field(i), path+"_"+n)
+				iterateStruct(t.Field(i), append(path, n))
 			}
 			break
 		default:
@@ -194,7 +186,7 @@ func iterateStruct(t reflect.Value, path string) error {
 		if sliceContains(tags, "required") {
 			isZero := t.Field(i).IsZero()
 			if isZero {
-				return fmt.Errorf("Required value %s is nil or zero value", strings.ReplaceAll(path+"_"+n, "_", "."))
+				return fmt.Errorf("Required value %s is nil or zero value", strings.Join(append(path, n), "."))
 			}
 		}
 	}
