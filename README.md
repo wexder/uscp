@@ -34,7 +34,7 @@ func main() {
 ```
 
 ## Required
-You can mark struct fields with `uscp:"required"`.
+You can mark struct fields with tag `uscp:"required"`.
 When unmarshallig the **USCP** will check if value of this field is non [zero value](https://go.dev/ref/spec#The_zero_value)
 if value is zero error is returned
 
