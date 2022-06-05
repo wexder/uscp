@@ -181,6 +181,26 @@ func iterateStruct(t reflect.Value, path []string) error {
 			break
 		}
 
+		// check if the field has tag for binding envs
+		envsTags := strings.Split(f.Tag.Get("uscp_env"), ",")
+		if len(envsTags) > 0 {
+			for _, env := range envsTags {
+				value, present := os.LookupEnv(env)
+				if present {
+					// TODO refactor
+					if f.Type == durationType {
+						dur, err := time.ParseDuration(value)
+						if err != nil {
+							return err
+						}
+						t.Field(i).Set(reflect.ValueOf(dur))
+					} else {
+						t.Field(i).Set(reflect.ValueOf(value))
+					}
+				}
+			}
+		}
+
 		// check if the field has tag and if it's non zero if required
 		tags := strings.Split(f.Tag.Get("uscp"), ",")
 		if sliceContains(tags, "required") {
