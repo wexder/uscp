@@ -107,11 +107,7 @@ func (u *Uscp) Unmarshal(out interface{}) error {
 	if len(configs) > 0 {
 		result = configs[0]
 		for _, conf := range configs {
-			merged, err := merge.Merge(result, conf)
-			if err != nil {
-				return err
-			}
-			result = merged
+			merge.Merge(result, conf)
 		}
 	}
 
